@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUNA - Comprehensive Lunar Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Merriweather:wght@400;700&family=Azeret+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 1. SETUP PRESENTASI */
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #121215;
+            --accent: #00e5ff;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --correct: #10b981;
+            --wrong: #ef4444;
+        }
+
+        * { box-sizing: border-box; scroll-behavior: smooth; outline: none; }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #000;
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            width: 100%; height: 100%;
+            overflow: hidden;
+        }
+
+        /* 2. LOGIC NAVIGASI (HIDDEN CHECKBOXES) */
+        #page-toggle, #quiz-toggle { display: none; }
+
+        /* 3. SLIDE CONTAINER GLOBAL */
+        .slide-container {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background-color: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            padding: 60px;
+            scroll-snap-align: start;
+        }
+
+        /* 4. LANDING PAGE (SECRET TRIGGER) */
+        .landing-page {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 1000;
+            transition: transform 0.9s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+
+        .moon-anim {
+            position: absolute;
+            width: 450px; height: 450px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
+            background-size: cover; border-radius: 50%; opacity: 0.15;
+            box-shadow: inset -40px -40px 80px #000;
+            animation: rotateMoon 120s linear infinite;
+        }
+
+        .team-container { display: flex; gap: 80px; z-index: 1; text-align: center; align-items: center; }
+        .name-main { font-family: 'Merriweather', serif; font-size: 2rem; font-weight: 700; text-transform: uppercase; margin: 0; }
+        .rama-trigger { cursor: pointer; transition: 0.3s; }
+        .rama-trigger:hover { color: var(--accent); transform: scale(1.05); }
+        .abs { font-family: 'Azeret Mono', monospace; font-size: 4rem; opacity: 0.2; line-height: 1; }
+        .divider { width: 1px; height: 120px; background: rgba(255,255,255,0.1); }
+
+        .btn-enter {
+            margin-top: 60px; padding: 20px 60px;
+            border: 1px solid var(--accent); color: var(--accent);
+            background: transparent; cursor: pointer;
+            font-weight: bold; letter-spacing: 5px;
+            transition: 0.4s; text-transform: uppercase; z-index: 1;
+        }
+        .btn-enter:hover { background: var(--accent); color: black; box-shadow: 0 0 40px var(--accent); }
+
+        /* 5. MAIN WRAPPER (MATERI) */
+        .main-wrapper {
+            width: 100%; height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            opacity: 0; transition: 1.2s ease;
+            outline: none;
+        }
+        #page-toggle:checked ~ .landing-page { transform: translateY(-100%); }
+        #page-toggle:checked ~ .main-wrapper { opacity: 1; }
+
+        /* 6. TYPOGRAPHY MATERI */
+        .slide-title {
+            font-family: 'Merriweather', serif;
+            font-size: 48px; font-weight: 700; color: var(--accent);
+            margin-bottom: 40px; border-left: 10px solid var(--accent); padding-left: 25px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .content-area { display: flex; gap: 50px; flex-grow: 1; align-items: flex-start; }
+        .text-block { flex: 1; font-size: 19px; line-height: 1.7; color: var(--text-main); text-align: justify; }
+        .image-block { flex: 1; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .img-rounded { width: 100%; height: 450px; object-fit: cover; border-radius: 12px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+
+        /* 7. KUIS OVERLAY (SECRET) */
+        .quiz-page {
+            position: fixed;
+            top: 0; left: 100%;
+            width: 100%; height: 100vh;
+            background: #000;
+            z-index: 2000;
+            transition: 0.8s cubic-bezier(0.8, 0, 0.2, 1);
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+        }
+        #quiz-toggle:checked ~ .quiz-page { left: 0; }
+
+        .quiz-slide {
+            width: 100%; height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            scroll-snap-align: start; padding: 40px;
+        }
+        .q-num { font-family: 'Azeret Mono', monospace; font-size: 1.2rem; color: var(--accent); margin-bottom: 20px; }
+        .q-text { font-size: 1.8rem; text-align: center; margin-bottom: 40px; max-width: 900px; line-height: 1.4; }
+
+        .option-box {
+            display: block; width: 100%; max-width: 600px;
+            background: #111; padding: 22px; margin: 12px 0;
+            border-radius: 12px; cursor: pointer; border: 1px solid #333;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: white;
+            text-align: center; font-weight: bold; font-size: 1.1rem;
+            text-decoration: none;
+        }
+        .option-box:hover { border-color: var(--accent); background: #1a1a1a; transform: scale(1.02); }
+        
+        input[type="radio"] { display: none; }
+        input[type="radio"]:checked + .option-box.c { background: var(--correct) !important; color: #000; border-color: var(--correct); box-shadow: 0 0 20px var(--correct); }
+        input[type="radio"]:checked + .option-box.w { background: var(--wrong) !important; color: #fff; border-color: var(--wrong); box-shadow: 0 0 20px var(--wrong); }
+
+        /* 8. ANIMASI & MISC */
+        @keyframes rotateMoon { from { background-position: 0 0; } to { background-position: 800px 0; } }
+        .back-nav { position: fixed; top: 30px; left: 30px; color: var(--accent); cursor: pointer; font-weight: bold; z-index: 3000; letter-spacing: 2px; }
+        
+        /* Table Style */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #333; padding: 20px; text-align: left; }
+        th { color: var(--accent); text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
+
+        /* Formula Container */
+        .formula { font-family: 'Azeret Mono', monospace; background: #1a1a1a; padding: 15px; border-radius: 8px; color: var(--accent); border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+    <input type="checkbox" id="page-toggle">
+    <input type="checkbox" id="quiz-toggle">
+
+    <div class="landing-page">
+        <div class="moon-anim"></div>
+        <div class="team-container">
+            <div class="member">
+                <p class="name-main">I Komang Dito<br>Pradnya</p>
+                <span class="abs">17</span>
+            </div>
+            <div class="divider"></div>
+            <div class="member">
+                <label for="quiz-toggle" class="rama-trigger">
+                    <p class="name-main">Kadek Rama<br>Adiputra</p>
+                </label>
+                <span class="abs">29</span>
+            </div>
+        </div>
+        <label for="page-toggle" class="btn-enter" onclick="document.getElementById('scroller').focus()">Mulai Belajar</label>
+    </div>
+
+    <div class="main-wrapper" id="scroller" tabindex="0">
+        
+        <section class="slide-container">
+            <h2 class="slide-title">1. Definisi Astronomis</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Bulan adalah satu-satunya satelit alami Bumi dan merupakan satelit terbesar kelima di Tata Surya. Sebagai benda langit yang tidak memiliki emisi cahaya internal, kecemerlangan Bulan di langit malam merupakan manifestasi dari <b>Albedo</b>, yaitu refleksi radiasi elektromagnetik dari fotosfer Matahari.</p>
+                    <p>Secara mekanis, eksistensi Bulan memberikan pengaruh stabilisasi pada presesi sumbu rotasi Bumi, yang secara langsung berdampak pada stabilitas iklim jangka panjang yang memungkinkan evolusi biologi yang kompleks.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://i.pinimg.com/1200x/33/ba/e8/33bae8dd4edc00f9f99578d0655097d4.jpg" class="img-rounded" alt="Moon Earth View">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">2. Hipotesis Tabrakan Besar</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Teori pembentukan Bulan yang paling otoritatif adalah <b>Hipotesis Theia</b>. Sekitar 4,5 miliar tahun lalu, Bumi purba bertabrakan dengan protoplanet seukuran Mars bernama Theia dalam sudut miring. Energi kinetik yang dilepaskan melontarkan material mantel Bumi ke orbit.</p>
+                    <p>Material tersebut mengalami akresi di orbit dan membentuk Bulan. Bukti geokimia menunjukkan kesamaan isotop oksigen antara batuan Bulan dan Mantel Bumi, memperkuat teori tabrakan dahsyat ini dibandingkan teori tangkapan gravitasi.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://i.pinimg.com/736x/61/c7/6e/61c76e56f3d698067a959e2739382a87.jpg" class="img-rounded" alt="Theia Collision">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">3. Parameter Fisik Dasar</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <table>
+                        <thead>
+                            <tr><th>Atribut Fisik</th><th>Data Pengukuran</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Diameter Khatulistiwa</td><td>3.476,8 km (27% Diameter Bumi)</td></tr>
+                            <tr><td>Massa</td><td>7,342 × 10²² kg (1,2% Massa Bumi)</td></tr>
+                            <tr><td>Gravitasi Permukaan</td><td><div class="formula"><math display="math"><msub><mi>g</mi><mi>L</mi></msub><mo>=</mo><mn>1,622</mn><mspace width="0.167em"></mspace><msup><mtext>m/s</mtext><mn>2</mn></msup></math></div></td></tr>
+                            <tr><td>Jarak Rata-rata (Apogee)</td><td>384.400 km</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="image-block">
+                    <img src="https://www.space.fm/astronomy/images/diagrams/moonsizedistance.jpg" class="img-rounded" alt="Moon Measurements">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">4. Stratigrafi Internal</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Interior Bulan terdiferensiasi secara kimiawi menjadi tiga lapisan utama:</p>
+                    <p>• <b>Kerak (Crust):</b> Memiliki ketebalan rata-rata 52 km, didominasi oleh anorthosite.<br>
+                       • <b>Mantel:</b> Lapisan silikat kaku yang tebal dan kaya akan olivin serta piroksen.<br>
+                       • <b>Inti (Core):</b> Berpusat pada radius sekitar 350 km, kaya akan besi padat di pusat yang dikelilingi lapisan besi cair eksternal.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://i.pinimg.com/736x/0a/02/18/0a0218333dd9fc7f803c2a5a2cbf4331.jpg" class="img-rounded" alt="Moon Internal Structure">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">5. Morfologi Permukaan</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Permukaan Bulan didominasi oleh dua fitur: <b>Maria</b> (dataran basal gelap hasil erupsi vulkanik purba) dan <b>Highlands</b> (wilayah terang penuh kawah benturan).</p>
+                    <p>Seluruh permukaan ditutupi oleh <b>Regolith</b>: lapisan debu halus dan fragmen batuan hasil pemboman mikrometeorit selama miliaran tahun. Karena tidak ada atmosfer, jejak di regolith dapat bertahan selama jutaan tahun tanpa erosi.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://apollo.im-ldi.com/LIW/img/20080826_img1.png" class="img-rounded" alt="Lunar Regolith">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">6. Dinamika Tidal Locking</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Bulan mengalami fenomena <b>Sinkronisasi Rotasi</b> atau <i>Tidal Locking</i>. Gaya pasang surut Bumi telah menyebabkan kecepatan rotasi Bulan pada porosnya sama dengan periode revolusinya mengelilingi Bumi (27,3 hari).</p>
+                    <p>Konsekuensi dari hal ini adalah Bumi selalu melihat sisi yang sama (Near Side), sementara sisi lainnya (Far Side) tidak pernah terlihat langsung dari permukaan Bumi tanpa bantuan wahana antariksa.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://science.nasa.gov/wp-content/uploads/2024/01/preview-tidal-locking.jpg" class="img-rounded" alt="Tidal Locking Diagram">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">7. Periode Sinodik & Fase</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Satu siklus lengkap fase bulan (Bulan Baru ke Bulan Baru) memakan waktu <b>29,5 hari</b> (Periode Sinodik). Perubahan visual ini terjadi akibat perubahan geometri antara Matahari, Bumi, dan Bulan.</p>
+                    <p>Delapan fase utamanya adalah: New Moon, Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon, Waning Gibbous, Third Quarter, dan Waning Crescent.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://c.tadst.com/gfx/600x337/moon-phases-explained.png?1" class="img-rounded" alt="Lunar Phases">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">8. Interaksi Gravitasi</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Interaksi gravitasi Bulan adalah penyebab utama fenomena <b>Pasang Surut</b> di lautan Bumi. Penarikan gravitasi ini juga menyebabkan transfer momentum sudut.</p>
+                    <p>Akibatnya, rotasi Bumi melambat secara perlahan dan Bulan menjauh dari Bumi sekitar <b>3,8 cm per tahun</b>. Hal ini dibuktikan melalui pengukuran laser menggunakan retroreflektor yang ditinggalkan misi Apollo.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://www.researchgate.net/publication/378717016/figure/fig3/AS:11431281227552602@1709642074607/Scheme-of-Lunar-laser-ranging-experiment-showing-the-divergence-related-challenges.png" class="img-rounded" alt="Laser Ranging Moon">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">9. Mekanisme Syzygy</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Gerhana terjadi ketika Matahari, Bumi, dan Bulan berada dalam konfigurasi garis lurus yang disebut <b>Syzygy</b>.</p>
+                    <p><b>Gerhana Matahari:</b> Bulan berada di antara Matahari dan Bumi (New Moon).<br>
+                       <b>Gerhana Bulan:</b> Bumi berada di antara Matahari dan Bulan (Full Moon), menyebabkan Bulan masuk ke bayangan Umbra Bumi dan tampak kemerahan akibat hamburan Rayleigh.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://i.pinimg.com/736x/a8/36/66/a836660eb6285d03b7232a82396f97b5.jpg" class="img-rounded" alt="Eclipse Geometry">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">10. Penjelajahan Apollo 11</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>Pada 20 Juli 1969, misi <b>Apollo 11</b> berhasil mendaratkan manusia pertama di Bulan (Neil Armstrong dan Buzz Aldrin). Keberhasilan ini merupakan pencapaian teknologi terbesar abad ke-20.</p>
+                    <p>Program Apollo tidak hanya bermotif politis (Space Race), tetapi juga sains fundamental yang membawa 382 kg batuan bulan kembali ke Bumi untuk diteliti laboratorium dunia.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://cdn11.bigcommerce.com/s-yzgoj/images/stencil/1280x1280/products/1959339/3932326/apitbg5zp__40687.1626372811.jpg?c=2" class="img-rounded" alt="Apollo 11 Astronaut">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide-container">
+            <h2 class="slide-title">11. Era Baru: Artemis</h2>
+            <div class="content-area">
+                <div class="text-block">
+                    <p>NASA saat ini menjalankan program <b>Artemis</b> untuk membangun keberadaan permanen manusia di Bulan, khususnya di wilayah Kutub Selatan yang memiliki cadangan es air.</p>
+                    <p>Bulan dipandang sebagai batu loncatan strategis (Gateway) untuk misi eksplorasi masa depan ke Mars. Pangkalan di Bulan akan memungkinkan pemanfaatan sumber daya in-situ (ISRU) untuk bahan bakar roket.</p>
+                </div>
+                <div class="image-block">
+                    <img src="https://www.nasa.gov/wp-content/uploads/2020/10/surface-1024x576-1.jpg" class="img-rounded" alt="Artemis Base">
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="quiz-page">
+        <label for="quiz-toggle" class="back-nav">← KEMBALI KE AWAL</label>
+
+        <script>
+            function autoSkip(nextId) {
+                setTimeout(() => {
+                    window.location.hash = nextId;
+                }, 600);
+            }
+        </script>
+        
+        <div class="quiz-slide" id="q1">
+            <span class="q-num">PERTAANYAAN 01</span>
+            <p class="q-text">Teori apa yang menjelaskan bahwa Bulan terbentuk dari tabrakan Bumi dengan planetoid seukuran Mars?</p>
+            <input type="radio" name="r1" id="a1"><label for="a1" class="option-box w" onclick="autoSkip('q2')">Teori Nebula</label>
+            <input type="radio" name="r1" id="b1"><label for="b1" class="option-box c" onclick="autoSkip('q2')">Hipotesis Theia</label>
+            <input type="radio" name="r1" id="c1"><label for="c1" class="option-box w" onclick="autoSkip('q2')">Teori Big Bang</label>
+            <input type="radio" name="r1" id="d1"><label for="d1" class="option-box w" onclick="autoSkip('q2')">Teori Gravitasi</label>
+        </div>
+
+        <div class="quiz-slide" id="q2">
+            <span class="q-num">PERTAANYAAN 02</span>
+            <p class="q-text">Berapa suhu ekstrem di permukaan Bulan saat malam hari karena ketiadaan atmosfer?</p>
+            <input type="radio" name="r2" id="a2"><label for="a2" class="option-box w" onclick="autoSkip('q3')">0°C</label>
+            <input type="radio" name="r2" id="b2"><label for="b2" class="option-box w" onclick="autoSkip('q3')">-100°C</label>
+            <input type="radio" name="r2" id="c2"><label for="c2" class="option-box c" onclick="autoSkip('q3')">-173°C</label>
+            <input type="radio" name="r2" id="d2"><label for="d2" class="option-box w" onclick="autoSkip('q3')">-273°C</label>
+        </div>
+
+        <div class="quiz-slide" id="q3">
+            <span class="q-num">PERTAANYAAN 03</span>
+            <p class="q-text">Apa nama fenomena yang menyebabkan satu sisi Bulan selalu menghadap ke Bumi?</p>
+            <input type="radio" name="r3" id="a3"><label for="a3" class="option-box c" onclick="autoSkip('q4')">Tidal Locking</label>
+            <input type="radio" name="r3" id="b3"><label for="b3" class="option-box w" onclick="autoSkip('q4')">Albedo</label>
+            <input type="radio" name="r3" id="c3"><label for="c3" class="option-box w" onclick="autoSkip('q4')">Retrorefleksi</label>
+            <input type="radio" name="r3" id="d3"><label for="d3" class="option-box w" onclick="autoSkip('q4')">Syzygy</label>
+        </div>
+
+        <div class="quiz-slide" id="q4">
+            <span class="q-num">PERTAANYAAN 04</span>
+            <p class="q-text">Apa nama lapisan debu halus hasil pemboman meteorit yang menyelimuti permukaan Bulan?</p>
+            <input type="radio" name="q4" id="a4"><label for="a4" class="option-box w" onclick="autoSkip('q5')">Magma</label>
+            <input type="radio" name="q4" id="b4"><label for="b4" class="option-box c" onclick="autoSkip('q5')">Regolith</label>
+            <input type="radio" name="q4" id="c4"><label for="c4" class="option-box w" onclick="autoSkip('q5')">Basal</label>
+            <input type="radio" name="q4" id="d4"><label for="d4" class="option-box w" onclick="autoSkip('q5')">Anorthosite</label>
+        </div>
+
+        <div class="quiz-slide" id="q5">
+            <span class="q-num">PERTAANYAAN 05</span>
+            <p class="q-text">Berapa kecepatan Bulan menjauh dari Bumi setiap tahunnya?</p>
+            <input type="radio" name="q5" id="a5"><label for="a5" class="option-box w" onclick="autoSkip('q6')">1 cm/tahun</label>
+            <input type="radio" name="q5" id="b5"><label for="b5" class="option-box c" onclick="autoSkip('q6')">3,8 cm/tahun</label>
+            <input type="radio" name="q5" id="c5"><label for="c5" class="option-box w" onclick="autoSkip('q6')">10 cm/tahun</label>
+            <input type="radio" name="q5" id="d5"><label for="d5" class="option-box w" onclick="autoSkip('q6')">50 cm/tahun</label>
+        </div>
+
+        <div class="quiz-slide" id="q6">
+            <span class="q-num">PERTAANYAAN 06</span>
+            <p class="q-text">Misi antariksa mana yang pertama kali mendaratkan manusia di Bulan tahun 1969?</p>
+            <input type="radio" name="q6" id="a6"><label for="a6" class="option-box w" onclick="autoSkip('q7')">Luna 2</label>
+            <input type="radio" name="q6" id="b6"><label for="b6" class="option-box w" onclick="autoSkip('q7')">Vostok 1</label>
+            <input type="radio" name="q6" id="c6"><label for="c6" class="option-box c" onclick="autoSkip('q7')">Apollo 11</label>
+            <input type="radio" name="q6" id="d6"><label for="d6" class="option-box w" onclick="autoSkip('q7')">Artemis 1</label>
+        </div>
+
+        <div class="quiz-slide" id="q7">
+            <span class="q-num">PERTAANYAAN 07</span>
+            <p class="q-text">Berapa perbandingan gravitasi Bulan terhadap gravitasi Bumi?</p>
+            <input type="radio" name="r7" id="a7"><label for="a7" class="option-box c" onclick="autoSkip('q8')">Sekitar 1/6 Kali</label>
+            <input type="radio" name="r7" id="b7"><label for="b7" class="option-box w" onclick="autoSkip('q8')">Sama dengan Bumi</label>
+            <input type="radio" name="r7" id="c7"><label for="c7" class="option-box w" onclick="autoSkip('q8')">2 Kali Lipat</label>
+            <input type="radio" name="r7" id="d7"><label for="d7" class="option-box w" onclick="autoSkip('q8')">1/2 Kali</label>
+        </div>
+
+        <div class="quiz-slide" id="q8">
+            <span class="q-num">PERTAANYAAN 08</span>
+            <p class="q-text">Konfigurasi garis lurus antara Matahari, Bumi, dan Bulan disebut dengan istilah?</p>
+            <input type="radio" name="r8" id="a8"><label for="a8" class="option-box c" onclick="autoSkip('q9')">Syzygy</label>
+            <input type="radio" name="r8" id="b8"><label for="b8" class="option-box w" onclick="autoSkip('q9')">Apogee</label>
+            <input type="radio" name="r8" id="c8"><label for="c8" class="option-box w" onclick="autoSkip('q9')">Perigee</label>
+            <input type="radio" name="r8" id="d8"><label for="d8" class="option-box w" onclick="autoSkip('q9')">Orbital</label>
+        </div>
+
+        <div class="quiz-slide" id="q9">
+            <span class="q-num">PERTAANYAAN 09</span>
+            <p class="q-text">Apa sebutan untuk dataran rendah gelap di permukaan Bulan bekas aliran lava kuno?</p>
+            <input type="radio" name="r9" id="a9"><label for="a9" class="option-box w" onclick="autoSkip('q10')">Highlands</label>
+            <input type="radio" name="r9" id="b9"><label for="b9" class="option-box c" onclick="autoSkip('q10')">Maria</label>
+            <input type="radio" name="r9" id="c9"><label for="c9" class="option-box w" onclick="autoSkip('q10')">Kawah</label>
+            <input type="radio" name="r9" id="d9"><label for="d9" class="option-box w" onclick="autoSkip('q10')">Regolith</label>
+        </div>
+
+        <div class="quiz-slide" id="q10">
+            <span class="q-num">PERTAANYAAN 10</span>
+            <p class="q-text">Berapa durasi satu siklus lengkap fase bulan (Periode Sinodik)?</p>
+            <input type="radio" name="r10" id="a10"><label for="a10" class="option-box w" onclick="autoSkip('done')">27,3 Hari</label>
+            <input type="radio" name="r10" id="b10"><label for="b10" class="option-box c" onclick="autoSkip('done')">29,5 Hari</label>
+            <input type="radio" name="r10" id="c10"><label for="c10" class="option-box w" onclick="autoSkip('done')">31 Hari</label>
+            <input type="radio" name="r10" id="d10"><label for="d10" class="option-box w" onclick="autoSkip('done')">365 Hari</label>
+        </div>
+
+        <div class="quiz-slide" id="done">
+            <h1 style="font-size: 3.5rem; letter-spacing: 10px;">SELESAI</h1>
+            <p style="opacity: 0.5;">Anda telah menamatkan seluruh kurikulum Lunar.</p>
+            <label for="quiz-toggle" class="btn-enter" style="border-color: #2ecc71; color: #2ecc71;">Tutup Kuis</label>
+        </div>
+    </div>
+
+</body>
+</html>
